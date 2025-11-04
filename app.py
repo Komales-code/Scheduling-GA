@@ -79,12 +79,19 @@ if uploaded_file:
         return max(population, key=fitness_function)
 
     if st.button("🚀 Run Genetic Algorithm"):
-        best_schedule = genetic_algorithm()
-        total_rating = fitness_function(best_schedule)
-        result_df = pd.DataFrame({
-            "Hour": time_slots,
-            "Program": best_schedule
-        })
-        st.subheader("📋 Optimal Schedule")
-        st.table(result_df)
-        st.write(f"**Total Rating:** {total_rating:.2f}")
+    best_schedule = genetic_algorithm()
+    total_rating = fitness_function(best_schedule)
+
+    # ✅ Fix for unequal lengths
+    min_length = min(len(time_slots), len(best_schedule))
+    time_slots = list(time_slots)[:min_length]
+    best_schedule = best_schedule[:min_length]
+
+    result_df = pd.DataFrame({
+        "Hour": time_slots,
+        "Program": best_schedule
+    })
+
+    st.subheader("📋 Optimal Schedule")
+    st.table(result_df)
+    st.write(f"**Total Rating:** {total_rating:.2f}")
