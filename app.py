@@ -2,10 +2,8 @@ import streamlit as st
 import pandas as pd
 import random
 
-# ============ PAGE CONFIG ============
-st.set_page_config(page_title="TV Program Scheduler", page_icon="🎬", layout="wide")
+st.set_page_config(page_title="TV Program Scheduler", layout="wide") #set page title
 
-# ============ HEADER ================
 st.markdown(
     """
     <style>
@@ -36,31 +34,24 @@ st.markdown(
         color: #fff;
     }
     </style>
-    <h1 class="main-title">🎯 Smart TV Scheduling using Genetic Algorithm</h1>
+    <h1 class="main-title"> Smart TV Scheduling using Genetic Algorithm</h1>
     <p class="subtext">Optimize your daily broadcast schedule for maximum viewer ratings</p>
-    """,
+    """, #title
     unsafe_allow_html=True
 )
 
-# ============ FILE UPLOAD =============
 uploaded_file = st.file_uploader("📂 Upload your modified CSV file (program ratings)", type=["csv"])
 
-# ============ READ CSV FUNCTION =============
 @st.cache_data
-def read_csv_to_dict(file):
+def read_csv_to_dict(file): #function to read the csv file
     df = pd.read_csv(file)
     program_ratings = {}
     for i, row in df.iterrows():
         program_ratings[row[0]] = [float(x) for x in row[1:]]
     return program_ratings, df.columns[1:]
 
-# ============ SIDEBAR SETTINGS =============
-st.sidebar.image(
-    "https://cdn-icons-png.flaticon.com/512/2920/2920277.png",
-    width=100,
-)
 st.sidebar.markdown("## ⚙️ Algorithm Parameters")
-
+#user input with default rate
 CO_R = st.sidebar.slider("Crossover Rate (CO_R)", 0.0, 0.95, 0.8, 0.01)
 MUT_R = st.sidebar.slider("Mutation Rate (MUT_R)", 0.01, 0.05, 0.02, 0.01)
 GEN = st.sidebar.number_input("Generations", min_value=50, max_value=500, value=100, step=10)
@@ -69,37 +60,31 @@ EL_S = 2
 
 st.sidebar.markdown("---")
 st.sidebar.info("👈 Adjust parameters and upload your CSV to begin scheduling.")
-
-# ============ MAIN CODE =============
+#code to function
 if uploaded_file:
     ratings, time_slots = read_csv_to_dict(uploaded_file)
     all_programs = list(ratings.keys())
     all_time_slots = list(range(len(time_slots)))
-
-    # === FITNESS FUNCTION ===
+    
     def fitness_function(schedule):
         total = 0
         for i, program in enumerate(schedule):
             total += ratings[program][i]
         return total
 
-    # === INITIALIZE POPULATION ===
     def initialize_population(programs, size):
         return [random.sample(programs, len(programs)) for _ in range(size)]
 
-    # === CROSSOVER ===
     def crossover(s1, s2):
         point = random.randint(1, len(s1) - 2)
         return s1[:point] + s2[point:], s2[:point] + s1[point:]
 
-    # === MUTATION ===
     def mutate(schedule):
         new = schedule.copy()
         i = random.randint(0, len(schedule) - 1)
         new[i] = random.choice(all_programs)
         return new
 
-    # === GENETIC ALGORITHM ===
     def genetic_algorithm():
         population = initialize_population(all_programs, POP)
         for _ in range(GEN):
@@ -117,13 +102,11 @@ if uploaded_file:
             population = new_pop
         return max(population, key=fitness_function)
 
-    # === RUN BUTTON ===
-    st.markdown("### 🎬 Run the Genetic Algorithm")
+    st.markdown("### 🎬 Run the Genetic Algorithm") #button to run
     if st.button("🚀 Generate Optimal Schedule"):
         best_schedule = genetic_algorithm()
         total_rating = fitness_function(best_schedule)
 
-        # Fix for unequal lengths
         min_length = min(len(time_slots), len(best_schedule))
         time_slots = list(time_slots)[:min_length]
         best_schedule = best_schedule[:min_length]
@@ -133,13 +116,11 @@ if uploaded_file:
             "Program": best_schedule
         })
 
-        # --- Display results in columns ---
-        c1, c2 = st.columns(2)
+        c1, c2 = st.columns(2) #display result
         c1.metric("🔁 Crossover Rate", f"{CO_R:.2f}")
         c2.metric("🎲 Mutation Rate", f"{MUT_R:.2f}")
         st.success("✅ Optimal schedule successfully generated!")
 
-        # --- Expandable section for results ---
         with st.expander("📋 View Generated Schedule"):
             st.dataframe(result_df, use_container_width=True)
 
